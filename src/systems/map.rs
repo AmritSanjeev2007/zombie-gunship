@@ -163,9 +163,36 @@ impl System for MapSystem {
                     changed |= slider(ui, &mut r.depth, 0.0..=12.0, "ring depth");
                 });
 
+                egui::CollapsingHeader::new("Surroundings & fog").show(ui, |ui| {
+                    let a = &mut cfg.apron;
+                    changed |= slider(ui, &mut a.flatten_start, 0.0..=200.0, "hills flatten from");
+                    changed |= slider(ui, &mut a.flatten_end, 10.0..=400.0, "flat plain from");
+                    a.flatten_end = a.flatten_end.max(a.flatten_start + 1.0);
+
+                    // Fog is read live by the renderers; no regeneration.
+                    let fog = &mut ctx.resources.fog;
+                    let mut color = fog.color.to_array();
+                    ui.horizontal(|ui| {
+                        ui.label("fog colour");
+                        ui.color_edit_button_rgb(&mut color);
+                    });
+                    fog.color = color.into();
+                    slider(ui, &mut fog.start, 0.0..=200.0, "fog starts");
+                    slider(ui, &mut fog.end, 20.0..=800.0, "fog total at");
+                    fog.end = fog.end.max(fog.start + 1.0);
+                    let mut blend = fog.sky_blend.to_degrees();
+                    slider(ui, &mut blend, 0.0..=30.0, "sky blend °");
+                    fog.sky_blend = blend.to_radians();
+                    slider(ui, &mut fog.outside_dim, 0.0..=0.8, "dim outside map");
+                    ui.checkbox(&mut fog.ground, "ground mist");
+                    slider(ui, &mut fog.ground_density, 0.0..=1.0, "mist density");
+                    slider(ui, &mut fog.ground_thickness, 0.5..=20.0, "mist height");
+                });
+
                 ui.separator();
                 for terrain in ctx.world.query_mut::<&mut Terrain>() {
                     ui.checkbox(&mut terrain.show_paths, "Show paths overlay");
+                    ui.checkbox(&mut terrain.show_surroundings, "Show surrounding land");
                 }
                 ui.horizontal(|ui| {
                     if ui.button("Regenerate").clicked() {

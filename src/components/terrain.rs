@@ -9,6 +9,8 @@ pub struct Terrain {
     pub rock_color: Vec3,
     /// Draw zombie routes, path-tree links and the objective ring on top.
     pub show_paths: bool,
+    /// Draw the land around the map.
+    pub show_surroundings: bool,
 }
 
 impl Default for Terrain {
@@ -18,6 +20,7 @@ impl Default for Terrain {
             high_color: Vec3::new(0.62, 0.45, 0.32),
             rock_color: Vec3::new(0.35, 0.31, 0.29),
             show_paths: false,
+            show_surroundings: true,
         }
     }
 }

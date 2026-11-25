@@ -4,7 +4,7 @@ use glow::HasContext;
 use crate::components::Terrain;
 use crate::engine::{FrameContext, System};
 use crate::map::Map;
-use crate::render::{GpuMesh, ShaderProgram, mesh};
+use crate::render::{GpuMesh, ShaderProgram, fog, mesh};
 
 const TERRAIN_VERTEX: &str = "./shaders/terrain.vert";
 const TERRAIN_FRAGMENT: &str = "./shaders/terrain.frag";
@@ -18,6 +18,7 @@ const OVERLAY_LIFT: f32 = 0.2;
 struct MapMeshes {
     revision: u64,
     terrain: GpuMesh,
+    apron: GpuMesh,
     routes: GpuMesh,
     links: GpuMesh,
     ring: GpuMesh,
@@ -27,6 +28,8 @@ impl MapMeshes {
     fn build(gl: &glow::Context, map: &Map, revision: u64) -> anyhow::Result<Self> {
         let (vertices, indices) = mesh::terrain_mesh(&map.heights);
         let terrain = GpuMesh::new_indexed(gl, &vertices, &indices, glow::TRIANGLES)?;
+        let (vertices, indices) = mesh::apron_mesh(&map.apron);
+        let apron = GpuMesh::new_indexed(gl, &vertices, &indices, glow::TRIANGLES)?;
 
         let lift = |p: Vec2| map.surface(p) + Vec3::Y * OVERLAY_LIFT;
         let routes: Vec<Vec<Vec3>> = map
@@ -50,6 +53,7 @@ impl MapMeshes {
         Ok(Self {
             revision,
             terrain,
+            apron,
             routes: GpuMesh::new(gl, &lines(&routes), glow::LINES)?,
             links: GpuMesh::new(gl, &lines(&links), glow::LINES)?,
             ring: GpuMesh::new(gl, &mesh::polyline_vertices([ring.as_slice()]), glow::LINES)?,
@@ -57,7 +61,13 @@ impl MapMeshes {
     }
 
     fn destroy(&self, gl: &glow::Context) {
-        for m in [&self.terrain, &self.routes, &self.links, &self.ring] {
+        for m in [
+            &self.terrain,
+            &self.apron,
+            &self.routes,
+            &self.links,
+            &self.ring,
+        ] {
             m.destroy(gl);
         }
     }
@@ -164,7 +174,12 @@ impl System for TerrainRendererSystem {
         shader.set_vec3(gl, "u_low_color", terrain.low_color);
         shader.set_vec3(gl, "u_high_color", terrain.high_color);
         shader.set_vec3(gl, "u_rock_color", terrain.rock_color);
+        let fog_settings = &ctx.resources.fog;
+        fog::set_uniforms(gl, shader, fog_settings, Some(map));
         meshes.terrain.draw(gl);
+        if terrain.show_surroundings {
+            meshes.apron.draw(gl);
+        }
 
         unsafe { gl.disable(glow::CULL_FACE) };
 
@@ -175,6 +190,7 @@ impl System for TerrainRendererSystem {
             shader.set_mat4(gl, "u_model", &glam::Mat4::IDENTITY);
             shader.set_vec3(gl, "u_sun_dir", self.sun_direction);
             shader.set_f32(gl, "u_lit", 0.0);
+            fog::set_uniforms(gl, shader, fog_settings, Some(map));
             for (mesh, color) in [
                 (&meshes.routes, Vec3::new(1.0, 0.15, 0.1)),
                 (&meshes.links, Vec3::new(0.2, 0.9, 1.0)),

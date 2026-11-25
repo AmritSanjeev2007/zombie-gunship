@@ -5,6 +5,7 @@
 //! zombies will follow. It is pure CPU work with no GL or ECS access, so the
 //! same config always yields the same map. See `plan.md` for the procedure.
 
+pub mod apron;
 pub mod carve;
 pub mod pathing;
 pub mod points;
@@ -14,6 +15,7 @@ use glam::{Vec2, Vec3};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
+pub use apron::{Apron, ApronConfig};
 pub use carve::{CraterConfig, RingConfig, ValleyConfig};
 pub use pathing::{PathConfig, PathTree, Route};
 pub use points::{Objective, PlacementConfig, SpawnPoint};
@@ -93,6 +95,7 @@ pub struct MapConfig {
     pub crater: CraterConfig,
     pub valley: ValleyConfig,
     pub ring: RingConfig,
+    pub apron: ApronConfig,
 }
 
 impl Default for MapConfig {
@@ -110,6 +113,7 @@ impl Default for MapConfig {
             crater: CraterConfig::default(),
             valley: ValleyConfig::default(),
             ring: RingConfig::default(),
+            apron: ApronConfig::default(),
         }
     }
 }
@@ -137,6 +141,8 @@ pub struct Map {
     pub ring_road: Vec<Vec2>,
     /// One path tree per edge that has spawns.
     pub paths: Vec<PathTree>,
+    /// Land around the map, flattening into a plain.
+    pub apron: Apron,
 }
 
 impl Map {
@@ -204,6 +210,13 @@ pub fn generate(config: &MapConfig) -> Map {
         &ring_road,
         config,
     );
+    let apron = apron::build(
+        &heights,
+        &noise,
+        &config.noise,
+        config.max_height,
+        &config.apron,
+    );
 
     Map {
         config: config.clone(),
@@ -213,6 +226,7 @@ pub fn generate(config: &MapConfig) -> Map {
         objective_ring,
         ring_road,
         paths,
+        apron,
     }
 }
 

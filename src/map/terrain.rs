@@ -222,8 +222,19 @@ pub struct BaseTerrain {
     pub smooth: Heightfield,
 }
 
-/// Generates the base terrain. Heights span `[floor, max_height]`, where the
-/// lower `floor` share leaves room for craters and valleys to dig into.
+/// Share of `max_height` that the base terrain never dips below, leaving
+/// room for craters and valleys to dig into. Also the height of the flat
+/// plain around the map.
+pub const FLOOR_FRACTION: f32 = 0.3;
+
+/// Uncarved terrain height at a world XZ position, in `[floor, max_height]`.
+pub fn base_height(noise: &Perlin, cfg: &NoiseConfig, max_height: f32, p: Vec2) -> f32 {
+    let floor = FLOOR_FRACTION * max_height;
+    // fBm rarely strays far from zero, so stretch it before mapping.
+    floor + (max_height - floor) * (noise.fbm(p, cfg) * 0.8 + 0.5).clamp(0.0, 1.0)
+}
+
+/// Generates the base terrain over the map rectangle.
 pub fn base_terrain(
     noise: &Perlin,
     cfg: &NoiseConfig,
@@ -232,13 +243,12 @@ pub fn base_terrain(
     size: Vec2,
     max_height: f32,
 ) -> BaseTerrain {
-    let floor = 0.3 * max_height;
-    // fBm rarely strays far from zero, so stretch it before mapping.
-    let to_height = |n: f32| floor + (max_height - floor) * (n * 0.8 + 0.5).clamp(0.0, 1.0);
     let smooth_cfg = NoiseConfig { octaves: 1, ..*cfg };
     BaseTerrain {
-        detail: Heightfield::from_fn(cols, rows, size, |p| to_height(noise.fbm(p, cfg))),
-        smooth: Heightfield::from_fn(cols, rows, size, |p| to_height(noise.fbm(p, &smooth_cfg))),
+        detail: Heightfield::from_fn(cols, rows, size, |p| base_height(noise, cfg, max_height, p)),
+        smooth: Heightfield::from_fn(cols, rows, size, |p| {
+            base_height(noise, &smooth_cfg, max_height, p)
+        }),
     }
 }
 

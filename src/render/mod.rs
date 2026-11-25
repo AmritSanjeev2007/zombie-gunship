@@ -1,5 +1,6 @@
 //! Thin, safe-ish wrappers around the raw OpenGL calls the systems need.
 
+pub mod fog;
 pub mod mesh;
 mod shader;
 pub mod texture;

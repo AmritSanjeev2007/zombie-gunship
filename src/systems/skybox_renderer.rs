@@ -95,6 +95,9 @@ impl System for SkyboxRendererSystem {
         gpu.shader.set_vec3(gl, "u_tint", skybox.tint);
         gpu.shader.set_f32(gl, "u_rotation", skybox.rotation);
         gpu.shader.set_i32(gl, "u_panorama", 0);
+        let fog = &ctx.resources.fog;
+        gpu.shader.set_vec3(gl, "u_fog_color", fog.color);
+        gpu.shader.set_f32(gl, "u_fog_blend", fog.sky_blend.sin());
         texture.bind(gl, 0);
 
         unsafe {

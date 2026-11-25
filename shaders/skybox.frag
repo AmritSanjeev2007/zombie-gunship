@@ -6,6 +6,8 @@ uniform mat4 u_inv_view_proj; // inverse of (projection * rotation-only view)
 uniform sampler2D u_panorama;
 uniform vec3 u_tint;
 uniform float u_rotation;
+uniform vec3 u_fog_color;
+uniform float u_fog_blend; // sin of the angle above the horizon where fog ends
 
 const float PI = 3.14159265359;
 
@@ -19,5 +21,8 @@ void main() {
 
     // Explicit LOD avoids a seam where atan wraps from +PI to -PI.
     vec3 color = textureLod(u_panorama, vec2(u, v), 0.0).rgb;
-    frag_color = vec4(color * u_tint, 1.0);
+    // Below the horizon the sky is hidden by the fog blanket; it fades back
+    // in just above it, so the fogged ground meets the sky without a line.
+    float fog = 1.0 - smoothstep(-0.02, max(u_fog_blend, 0.0), dir.y);
+    frag_color = vec4(mix(color * u_tint, u_fog_color, fog), 1.0);
 }

@@ -19,8 +19,9 @@ Map
 ├── spawns: Vec<SpawnPoint>    { pos, edge }
 ├── objective_ring: Vec<usize> objectives sorted by angle
 ├── ring_road: Vec<Vec2>       smooth loop through the objectives (carved)
-└── paths: Vec<PathTree>       one per edge that has spawns
-    └── routes: Vec<Route>     smooth polyline, spawn → objective
+├── paths: Vec<PathTree>       one per edge that has spawns
+│   └── routes: Vec<Route>     smooth polyline, spawn → objective
+└── apron: Apron               land around the map (rings of vertices)
 ```
 
 ## Modules
@@ -32,6 +33,8 @@ Map
 | `map/points.rs`               | Objective and spawn placement                           |
 | `map/pathing.rs`              | Target choice, path trees, Catmull-Rom routes           |
 | `map/carve.rs`                | Crater and valley profiles, carving into the heightfield |
+| `map/apron.rs`                | Land around the map, flattening into a plain            |
+| `render/fog.rs`               | Fog uniforms shared by the terrain and mesh shaders     |
 | `systems/map.rs`              | Generates on start / on request, marker entities, Map UI |
 | `systems/terrain_renderer.rs` | Heightfield as an indexed mesh, path overlay            |
 
@@ -92,6 +95,23 @@ noise is hand-written (a seeded permutation table), so no noise crate is needed.
    look like natural valley floors instead of noisy trenches. Rims are faded
    out where a valley passes, so paths break through crater walls. All widths
    are in world units, not grid cells.
+
+## Beyond the map
+
+9. **Apron.** Rings of vertices grow outward from the map's edge. Ring 0 is
+   the map's own edge (same positions, heights and normals), so the seam is
+   watertight. Rings are rounded at the corners and their spacing grows
+   geometrically, so detail is fine near the map and coarse far away. Heights
+   continue the same base noise; any crater cut by the edge fades out over a
+   few units, and the hills settle into a flat plain (at the terrain floor
+   height) between `flatten_start` and `flatten_end`. One last flat ring runs
+   out to the horizon.
+10. **Fog.** `Resources::fog`. Fog is measured from the map's edge, not from
+   the camera, so the battlefield stays clear at any zoom while the land
+   beyond fades into a blanket. Its colour matches the sky's horizon, and the
+   skybox fades to the same colour below the horizon, so ground and sky meet
+   without a line. Optional ground mist pools on the low plain, and land
+   outside the map is slightly dimmed so the playable edge reads clearly.
 
 ## Rendering and tools
 

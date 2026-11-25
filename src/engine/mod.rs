@@ -15,7 +15,7 @@ mod system;
 mod time;
 
 pub use input::Input;
-pub use resources::{CameraMatrices, Resources, Viewport};
+pub use resources::{CameraMatrices, Fog, Resources, Viewport};
 pub use system::{FrameContext, System, UiContext, UpdateContext};
 pub use time::Time;
 

@@ -5,7 +5,7 @@ use glow::HasContext;
 
 use crate::components::{MeshRenderer, Primitive, Transform};
 use crate::engine::{FrameContext, System};
-use crate::render::{GpuMesh, ShaderProgram, mesh};
+use crate::render::{GpuMesh, ShaderProgram, fog, mesh};
 
 const VERTEX_PATH: &'static str = "./shaders/mesh.vert";
 const FRAGMENT_PATH: &'static str = "./shaders/mesh.frag";
@@ -108,6 +108,7 @@ impl System for MeshRendererSystem {
             shader.set_mat4(gl, "u_model", &transform.matrix());
             shader.set_vec3(gl, "u_color", renderer.color);
             shader.set_f32(gl, "u_lit", if renderer.lit { 1.0 } else { 0.0 });
+            fog::set_uniforms(gl, shader, &ctx.resources.fog, ctx.resources.map.as_ref());
             self.meshes[&renderer.primitive].draw(gl);
         }
 

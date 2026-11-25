@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use glam::Vec3;
 use glow::HasContext;
 
-use crate::map::Heightfield;
+use crate::map::{Apron, Heightfield};
 
 /// Interleaved vertex: position then normal.
 #[repr(C)]
@@ -192,6 +192,31 @@ pub fn terrain_mesh(field: &Heightfield) -> (Vec<Vertex>, Vec<u32>) {
     (vertices, indices)
 }
 
+/// Triangle mesh of the land around the map: a strip of quads between each
+/// pair of neighbouring rings, wrapping around the rectangle.
+pub fn apron_mesh(apron: &Apron) -> (Vec<Vertex>, Vec<u32>) {
+    let vertices: Vec<Vertex> = apron
+        .positions
+        .iter()
+        .zip(&apron.normals)
+        .map(|(p, n)| Vertex {
+            position: p.to_array(),
+            normal: n.to_array(),
+        })
+        .collect();
+    let mut indices = Vec::with_capacity((apron.rings - 1) * apron.ring_len * 6);
+    for k in 0..apron.rings - 1 {
+        for i in 0..apron.ring_len {
+            let a = apron.index(k, i) as u32;
+            let b = apron.index(k, i + 1) as u32;
+            let c = apron.index(k + 1, i) as u32;
+            let d = apron.index(k + 1, i + 1) as u32;
+            indices.extend([a, b, c, b, d, c]);
+        }
+    }
+    (vertices, indices)
+}
+
 /// Line pairs following each polyline (`LINES` mode).
 pub fn polyline_vertices<'a>(lines: impl IntoIterator<Item = &'a [Vec3]>) -> Vec<Vertex> {
     let normal = Vec3::Y.to_array();
@@ -214,13 +239,30 @@ mod tests {
     use super::*;
 
     #[test]
+    fn apron_triangles_face_up() {
+        let map = crate::map::generate(&crate::map::MapConfig {
+            resolution: 0.5,
+            ..Default::default()
+        });
+        let (verts, indices) = apron_mesh(&map.apron);
+        for tri in indices.chunks(3) {
+            let [a, b, c] =
+                [tri[0], tri[1], tri[2]].map(|i| Vec3::from(verts[i as usize].position));
+            // Corner fans start from a single point, so some are degenerate.
+            let n = (b - a).cross(c - a);
+            assert!(n.y > 0.0 || n.length() < 1e-4, "{n}");
+        }
+    }
+
+    #[test]
     fn terrain_triangles_face_up() {
         let field = Heightfield::new(4, 3, glam::Vec2::new(3.0, 2.0));
         let (verts, indices) = terrain_mesh(&field);
         assert_eq!(verts.len(), 12);
         assert_eq!(indices.len(), 3 * 2 * 6);
         for tri in indices.chunks(3) {
-            let [a, b, c] = [tri[0], tri[1], tri[2]].map(|i| Vec3::from(verts[i as usize].position));
+            let [a, b, c] =
+                [tri[0], tri[1], tri[2]].map(|i| Vec3::from(verts[i as usize].position));
             assert!((b - a).cross(c - a).y > 0.0);
         }
     }
