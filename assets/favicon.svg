@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Zombie Gunship</title>
+  <!-- Cranium and cheekbones -->
+  <path fill="#e8e2d0" stroke="#2b2622" stroke-width="2.5" stroke-linejoin="round"
+        d="M32 4C17 4 7 14.5 7 28c0 7.5 3.2 12.8 8 16v5h34v-5c4.8-3.2 8-8.5 8-16C57 14.5 47 4 32 4z"/>
+  <!-- Crack -->
+  <path fill="none" stroke="#2b2622" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+        d="M36 5l-3 6 4 4-3 5"/>
+  <!-- Eye sockets with a zombie glow -->
+  <ellipse cx="22" cy="29" rx="7.5" ry="7" fill="#1a1414"/>
+  <ellipse cx="42" cy="29" rx="7.5" ry="7" fill="#1a1414"/>
+  <circle cx="22.5" cy="30" r="2.4" fill="#d6301e"/>
+  <circle cx="41.5" cy="30" r="2.4" fill="#d6301e"/>
+  <!-- Nose -->
+  <path fill="#1a1414" d="M32 37l-4 7h8z"/>
+  <!-- Jaw and teeth -->
+  <rect x="17" y="47" width="30" height="13" rx="3.5" fill="#e8e2d0" stroke="#2b2622" stroke-width="2.5"/>
+  <path fill="none" stroke="#2b2622" stroke-width="1.8" stroke-linecap="round"
+        d="M23 47v13M29 47v13M35 47v13M41 47v13M17 53.5h30"/>
+</svg>

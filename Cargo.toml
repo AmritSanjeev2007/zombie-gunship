@@ -4,3 +4,29 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Windowing + OpenGL context
+winit = "0.30"
+glutin = "0.32"
+glutin-winit = "0.5"
+raw-window-handle = "0.6"
+glow = "0.17"
+
+# Immediate-mode debug UI (Rust's answer to Dear ImGui)
+egui = { version = "0.37", features = ["default_fonts"] }
+egui-winit = "0.37"
+egui_glow = { version = "0.37", features = ["winit"] }
+
+# Entity-component storage
+hecs = "0.11"
+
+# Maths
+glam = "0.30"
+
+# Assets
+image = { version = "0.25", default-features = false, features = ["png"] }
+resvg = { version = "0.50", default-features = false }
+
+# Errors
+anyhow = "1"
+rand = "0.9"
+rand_chacha = "0.9"
